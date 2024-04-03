@@ -118,7 +118,7 @@ def order_of_accuracy_test(r,dt,iterations=8, type='base'):
 
 # fix the random seed
 np.random.seed(0)
-n_agents=2
+n_agents=1
 nx_system=4
 
 # compare the base initialization condition. the result should be a parabola
@@ -131,4 +131,6 @@ x=init(n_agents,nx_system, type='random')
 u=np.random.rand(n_agents,2)
 compare_solutions(x, u, 'random_initialization')
 
+# order of accuracy test with 14 iterations
 order_of_accuracy_test(2, 1.0, 14,'random')
+

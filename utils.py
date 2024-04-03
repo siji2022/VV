@@ -54,9 +54,8 @@ def potential_grad(pos_diff, r2):
     """
     r2_2 = np.multiply(r2, r2)
     # r2_2=np.nan_to_num(r2_2,nan=np.Inf)
-    grad = -1.0 * np.divide(pos_diff, r2_2
-                            ) + 1 * np.divide(pos_diff, r2)
-    grad[r2 > 1.0] = 0
+    grad = -1.0 * np.divide(pos_diff, r2_2) + 1 * np.divide(pos_diff, r2)
+    # grad[r2 > 100.0] = 0
     return grad*2.0
 
 def controller_centralized(diff, r2 ):
@@ -66,10 +65,10 @@ def controller_centralized(diff, r2 ):
     """
     n_agents = diff.shape[0]
     nx_system = diff.shape[2]
-    # TODO use the helper quantities here more?
-    potentials = np.dstack((diff, potential_grad(
-        diff[:, :, 0], r2), potential_grad(diff[:, :, 1], r2)))
-    potentials = np.nan_to_num(potentials, nan=0.0)  # fill nan with 0
+    # self dist is not considered
+    np.fill_diagonal(r2, np.Inf)
+    potentials = np.dstack((diff, potential_grad(diff[:, :, 0], r2), potential_grad(diff[:, :, 1], r2)))
+    # potentials = np.nan_to_num(potentials, nan=0.0)  # fill nan with 0
 
 
     p_sum = np.sum(potentials, axis=1).reshape((n_agents, nx_system + 2))
