@@ -49,10 +49,9 @@ def compare_solutions(x, u, title=''):
 
     plt.clf()
 
-n_agents=2
-nx_system=4
 
-def order_of_accuracy_test(r,dt,type='base'):
+
+def order_of_accuracy_test(r,dt,iterations=8, type='base'):
     # r: mesh refinement factor
     # dt: initial time step
     error_norm1=[]
@@ -63,8 +62,8 @@ def order_of_accuracy_test(r,dt,type='base'):
     x=init(n_agents,nx_system, type=type)
     # u=np.array([0.,-1]).reshape(1,2)
     # random generate u in the range of -100 to 100
-    u=np.random.rand(1,2)
-    for _ in range(6):
+    u=np.random.rand(n_agents,2)
+    for _ in range(iterations):
         x_axis.append(dt)
         x_exact = exact_solution_state(x, u, dt)
         x_numerical = numerical_solution_state(x, u, dt)
@@ -117,6 +116,11 @@ def order_of_accuracy_test(r,dt,type='base'):
     plt.grid()
     plt.savefig('./test_error.png')
 
+# fix the random seed
+np.random.seed(0)
+n_agents=2
+nx_system=4
+
 # compare the base initialization condition. the result should be a parabola
 x=init(n_agents,nx_system, type='base')
 u=np.array([0.,-1]).reshape(1,2)
@@ -127,4 +131,4 @@ x=init(n_agents,nx_system, type='random')
 u=np.random.rand(n_agents,2)
 compare_solutions(x, u, 'random_initialization')
 
-order_of_accuracy_test(2,0.1,'random')
+order_of_accuracy_test(2, 1.0, 14,'random')

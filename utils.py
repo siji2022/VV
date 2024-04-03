@@ -16,24 +16,31 @@ def exact_solution_state(x, u, t):
     # u is constant
     # deep copy the state
     x=copy.deepcopy(x)
-    x[:,2:4] = x[:,2:4] + u*t
     x[:,0:2] = x[:,0:2] + x[:,2:4]*t + (1/2)*u*t**2
+    x[:,2:4] = x[:,2:4] + u*t
+    
     return x
 
 def numerical_solution_state(x, u, dt):
-    # update the state using numerical solution
+    # update the state using numerical solution, submitted in HW2
     # u is constant
     # x is iterativly updated
     x_new=copy.deepcopy(x)
-    x_new[:, 2:] = x[:, 2:] + u*dt
     x_new[:, :2] = x[:, :2]+  x[:, 2:]*dt
+    x_new[:, 2:] = x[:, 2:] + u*dt
     
-    # x[:, :2] += u*dt
-    
-    # x[:, :2] += x[:, 2:]*dt
-    # x[:, :2] += u*dt*dt*0.5
-    # x[:, 2:] += u*dt
     return x_new
+
+def numerical_solution_state1(x, u, dt):
+    # update the state using numerical solution
+    # u is constant
+    # x is iterativly updated
+    x=copy.deepcopy(x)
+    x[:, :2] += x[:, 2:]*dt
+    x[:, :2] += u*dt*dt*0.5
+    x[:, 2:] += u*dt
+    
+    return x
 
 def potential_grad(pos_diff, r2):
     """
