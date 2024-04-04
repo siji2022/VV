@@ -52,10 +52,14 @@ def potential_grad(pos_diff, r2):
     Returns: corresponding component of the gradient of the potential
 
     """
-    r2_2 = np.multiply(r2, r2)
+    r=np.sqrt(r2)
+    # now shift r to manipulate the distance
+    r=r/4.0
     # r2_2=np.nan_to_num(r2_2,nan=np.Inf)
-    grad = -1.0 * np.divide(pos_diff, r2_2) + 1 * np.divide(pos_diff, r2)
-    # grad[r2 > 100.0] = 0
+    # grad = -1.0 * np.divide(pos_diff, r2*r2) + 1 * np.divide(pos_diff, r2)
+    grad = -1.0 * np.divide(pos_diff, r**3) + 1 * np.divide(pos_diff, r)
+    # grad = -1.0 * np.divide(pos_diff, r2) + 1 * np.divide(pos_diff, r)
+    # grad[r > 1.0] = 0
     return grad*2.0
 
 def controller_centralized(diff, r2 ):
@@ -68,6 +72,7 @@ def controller_centralized(diff, r2 ):
     # self dist is not considered
     np.fill_diagonal(r2, np.Inf)
     potentials = np.dstack((diff, potential_grad(diff[:, :, 0], r2), potential_grad(diff[:, :, 1], r2)))
+
     # potentials = np.nan_to_num(potentials, nan=0.0)  # fill nan with 0
 
 
