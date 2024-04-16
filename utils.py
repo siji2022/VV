@@ -54,7 +54,7 @@ def potential_grad(pos_diff, r2):
     """
     r=np.sqrt(r2)
     # now shift r to manipulate the distance
-    r=r/4.0
+    r=r
     # r2_2=np.nan_to_num(r2_2,nan=np.Inf)
     # grad = -1.0 * np.divide(pos_diff, r2*r2) + 1 * np.divide(pos_diff, r2)
     grad = -1.0 * np.divide(pos_diff, r**3) + 1 * np.divide(pos_diff, r)

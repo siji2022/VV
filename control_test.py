@@ -7,6 +7,7 @@ from utils import *
 
 
 # fix the random seed
+# initialize
 np.random.seed(0)
 n_agents=4
 nx_system=4
@@ -25,10 +26,11 @@ while not valid_init:
                 valid_init=False
                 break
 
-
+# start the simulation
 iterations=200
 x=copy.deepcopy(x_init)
 diff_history=[]
+u_history=[]
 for i in range(iterations):
     # calculate the input for control
     diff = x.reshape((n_agents, 1, nx_system)) - x.reshape(
@@ -36,7 +38,8 @@ for i in range(iterations):
     diff_history.append(diff)
     r2 = np.multiply(diff[:, :, 0], diff[:, :, 0]) + np.multiply(diff[:, :, 1],diff[:, :, 1])
 
-    u=controller_centralized(diff, r2)
+    u=controller_centralized(diff, r2/16.0)
+    u_history.append(u)
     # upate the state
     x=numerical_solution_state1(x, u, dt)
     if (i+1)%100==0:
@@ -58,27 +61,35 @@ plt.ylabel('y')
 plt.title('Flocking')
 plt.savefig('./flocking.png')
 plt.clf()
+
+# visualize the trajectory convergence
 diff_history=np.array(diff_history)
-# make two subplots
-fig,axs = plt.subplots(2,1,figsize=(10,8))
+u_history=np.array(u_history)
+
+fig,axs = plt.subplots(3,1,figsize=(10,12))
 axs = np.ravel(axs)
 for node_i in range(n_agents):
     for node_j in range(n_agents):
         if node_i!=node_j and node_i<node_j:
-            # norm position difference
             axs[0].plot(np.linalg.norm(diff_history[:,node_i,node_j,:2],axis=1),label=f'position diff {node_i}_{node_j}')
             axs[1].plot(np.linalg.norm(diff_history[:,node_i,node_j,2:],axis=1),'.', label=f'velocity diff {node_i}_{node_j}')
+    axs[2].plot(u_history[:,node_i,0],'.',label=f'u_x {node_i}')
+    axs[2].plot(u_history[:,node_i,1],'.',label=f'u_y {node_i}')
+    axs[2].plot(np.linalg.norm(u_history[:,node_i,:],axis=1),label=f'u_norm {node_i}')
 
 axs[0].legend()
 axs[1].legend()
+axs[2].legend()
 axs[0].set_title('position diff')
 axs[1].set_title('velocity diff')
+axs[2].set_title('control input')
 
 plt.xlabel('iterations')
 axs[0].set_ylabel('diff norm')
 axs[1].set_ylabel('diff norm')
 axs[0].grid()
 axs[1].grid()
-plt.savefig('./trajectory_convergence.png')
+axs[2].grid()
+plt.savefig('./trajectory_convergence.png',dpi=300, bbox_inches='tight')
 
 
