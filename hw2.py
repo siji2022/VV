@@ -45,7 +45,7 @@ def compare_solutions(x, u, title=''):
     plt.title(f'Velocity {title}')
     plt.legend()
     plt.grid()
-    plt.savefig(f'./test_exact_numerical_solutions_{title}.png')
+    plt.savefig(f'./plots/test_exact_numerical_solutions_{title}.png')
 
     plt.clf()
 
@@ -99,7 +99,7 @@ def order_of_accuracy_test(r,dt,iterations=8, type='base'):
     plt.title(f'Order of accuracy, last L1 error/dt: {last_error_norm1:.6f}/{dt*r:.6f}')
     plt.legend()
     plt.grid()
-    plt.savefig('./test_observed_order_of_accuracy.png')
+    plt.savefig('./plots/test_observed_order_of_accuracy.png')
     plt.clf()
 
     print('x_axis',x_axis)  
@@ -114,7 +114,7 @@ def order_of_accuracy_test(r,dt,iterations=8, type='base'):
     plt.xlabel('dt')
     plt.ylabel('error')
     plt.grid()
-    plt.savefig('./test_error.png')
+    plt.savefig('./plots/test_error.png')
 
 # fix the random seed
 np.random.seed(0)

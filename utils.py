@@ -1,12 +1,13 @@
 import numpy as np
 import copy
+import matplotlib.pyplot as plt
 
 def init(n_agents,nx_system, type='random'):
     # initial condition with all zeros
     if type == 'zero':
         x = np.zeros((n_agents,nx_system))
     elif type == 'random':
-        x = np.random.rand(n_agents,nx_system)
+        x = np.random.rand(n_agents,nx_system)-0.5
     elif type == 'base':
         x=np.array([0.,0,1,0]).reshape(1,nx_system)
     return x
@@ -15,11 +16,12 @@ def exact_solution_state(x, u, t):
     # update the state using exact solution
     # u is constant
     # deep copy the state
-    x=copy.deepcopy(x)
-    x[:,0:2] = x[:,0:2] + x[:,2:4]*t + (1/2)*u*t**2
-    x[:,2:4] = x[:,2:4] + u*t
+    # x=copy.deepcopy(x)
+    # x[:,0:2] = x[:,0:2] + x[:,2:4]*t + (1/2)*u*t**2
+    # x[:,2:4] = x[:,2:4] + u*t
     
-    return x
+    # return x
+    return numerical_solution_state1(x, u, t)
 
 def numerical_solution_state(x, u, dt):
     # update the state using numerical solution, submitted in HW2
@@ -59,7 +61,7 @@ def potential_grad(pos_diff, r2):
     # grad = -1.0 * np.divide(pos_diff, r2*r2) + 1 * np.divide(pos_diff, r2)
     grad = -1.0 * np.divide(pos_diff, r**3) + 1 * np.divide(pos_diff, r)
     # grad = -1.0 * np.divide(pos_diff, r2) + 1 * np.divide(pos_diff, r)
-    # grad[r > 1.0] = 0
+    # grad[r > 1.0] = 0 # this cut-off lead to osciliation
     return grad*2.0
 
 def controller_centralized(diff, r2 ):
@@ -81,3 +83,61 @@ def controller_centralized(diff, r2 ):
         (-1, 1)), (- p_sum[:, 3] - p_sum[:, 5]).reshape(-1, 1)))
     
     return controls
+
+def controller_gamma(x,  Destination, C1_gamma, C2_gamma,):
+        Destination_x, Destination_y, Desired_v_x, Desired_v_y = Destination
+        agent_p = x[:, :2]  # position of agent i
+        agent_v = x[:, 2:]  # velocity of agent i
+        u_gamma = -C1_gamma * sigma_1(agent_p - [Destination_x, Destination_y], 1.0) - C2_gamma * (
+            agent_v - [Desired_v_x, Desired_v_y])
+        return u_gamma
+
+def sigma_1(z, base=1.0):
+    z=z/4.0 # scale z as the comm_range = 4.0
+    sigma_1_val = z/np.sqrt(base + z**2)
+    return sigma_1_val
+
+def calc_SRQs(x_history,u_history,diff_history):
+    # calculate SRQs
+    # find when u is 0
+    # u_history is the control history
+    # x_history is the state history
+    # diff_history is the difference history
+    # find the convergence time
+    u_norm=np.linalg.norm(u_history,axis=2)
+    thr=1e-3
+    u_norm[u_norm<thr]=0
+    u_norm[u_norm>=thr]=1
+    u_norm_diff=np.diff(u_norm,axis=0)
+    # find the time when u is 0
+    u_zero_time=np.where(u_norm_diff==-1)
+
+    # final step's min distance
+    min_dist=np.linalg.norm(diff_history[-1,:,:,:2],axis=2)
+    np.fill_diagonal(min_dist,np.inf)
+    min_dist=np.min(min_dist)
+    # max u
+    max_u=np.max(np.abs(u_history))
+    return u_zero_time,min_dist, max_u
+
+# if main is called, run the test
+if __name__ == '__main__':
+    # test sigma_1
+    plt.clf()
+    z_orig=np.arange(-5,5,0.005)
+    z=z_orig
+    # z=z_orig/4.0
+    sigma_1_val=sigma_1(z,1.0)
+    sigma_1_val1=sigma_1(z,0.1)
+    sigma_1_val2=sigma_1(z,5.0)
+    
+    plt.plot(z_orig,sigma_1_val1,label='base 0.1')
+    plt.plot(z_orig,sigma_1_val,label='base 1.0')
+    plt.plot(z_orig,sigma_1_val2,label='base 5.0')
+    plt.xlabel('z')
+    plt.ylabel('sigma_1')
+    plt.legend()
+    plt.title('sigma_1')
+    plt.grid()
+    plt.savefig('./plots/sigma_1.png')
+    
