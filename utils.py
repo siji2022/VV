@@ -61,7 +61,7 @@ def potential_grad(pos_diff, r2):
     # grad = -1.0 * np.divide(pos_diff, r2*r2) + 1 * np.divide(pos_diff, r2)
     grad = -1.0 * np.divide(pos_diff, r**3) + 1 * np.divide(pos_diff, r)
     # grad = -1.0 * np.divide(pos_diff, r2) + 1 * np.divide(pos_diff, r)
-    # grad[r > 1.0] = 0 # this cut-off lead to osciliation
+    grad[r > 1.0] = 0 # this cut-off lead to osciliation
     return grad*2.0
 
 def controller_centralized(diff, r2 ):
@@ -76,24 +76,22 @@ def controller_centralized(diff, r2 ):
     potentials = np.dstack((diff, potential_grad(diff[:, :, 0], r2), potential_grad(diff[:, :, 1], r2)))
 
     # potentials = np.nan_to_num(potentials, nan=0.0)  # fill nan with 0
-
-
     p_sum = np.sum(potentials, axis=1).reshape((n_agents, nx_system + 2))
-    controls = np.hstack(((- p_sum[:, 4] - p_sum[:, 2]).reshape(
-        (-1, 1)), (- p_sum[:, 3] - p_sum[:, 5]).reshape(-1, 1)))
+    controls = np.hstack(((- p_sum[:, 4] - p_sum[:, 2]*0).reshape(
+        (-1, 1)), (- p_sum[:, 3]*0 - p_sum[:, 5]).reshape(-1, 1)))
     
     return controls
 
-def controller_gamma(x,  Destination, C1_gamma, C2_gamma,):
+def controller_gamma(x,  Destination, C1_gamma, C2_gamma, r_scale, base):
         Destination_x, Destination_y, Desired_v_x, Desired_v_y = Destination
         agent_p = x[:, :2]  # position of agent i
         agent_v = x[:, 2:]  # velocity of agent i
-        u_gamma = -C1_gamma * sigma_1(agent_p - [Destination_x, Destination_y], 1.0) - C2_gamma * (
+        u_gamma = -C1_gamma * sigma_1(agent_p - [Destination_x, Destination_y], r_scale, base) - C2_gamma * (
             agent_v - [Desired_v_x, Desired_v_y])
         return u_gamma
 
-def sigma_1(z, base=1.0):
-    z=z/4.0 # scale z as the comm_range = 4.0
+def sigma_1(z, r_scale, base=1.0):
+    z=z/r_scale # scale z as the comm_range = 4.0
     sigma_1_val = z/np.sqrt(base + z**2)
     return sigma_1_val
 
@@ -104,13 +102,17 @@ def calc_SRQs(x_history,u_history,diff_history):
     # x_history is the state history
     # diff_history is the difference history
     # find the convergence time
-    u_norm=np.linalg.norm(u_history,axis=2)
-    thr=1e-3
-    u_norm[u_norm<thr]=0
-    u_norm[u_norm>=thr]=1
-    u_norm_diff=np.diff(u_norm,axis=0)
-    # find the time when u is 0
-    u_zero_time=np.where(u_norm_diff==-1)
+    try:
+        u_norm=np.linalg.norm(u_history,axis=2)
+        thr=1e-3
+        u_norm[u_norm<thr]=0
+        u_norm[u_norm>=thr]=1
+        u_norm_diff=np.diff(u_norm,axis=0)
+        # find the time when u is 0
+        u_zero_time=np.where(u_norm_diff==-1)
+        converged_steps=np.max(u_zero_time)
+    except:
+        converged_steps=-1
 
     # final step's min distance
     min_dist=np.linalg.norm(diff_history[-1,:,:,:2],axis=2)
@@ -118,7 +120,10 @@ def calc_SRQs(x_history,u_history,diff_history):
     min_dist=np.min(min_dist)
     # max u
     max_u=np.max(np.abs(u_history))
-    return u_zero_time,min_dist, max_u
+    # variance after convergence
+    diff_var_position=np.var(np.var(diff_history[converged_steps:,:,:,:2],axis=(0)))
+    diff_var_velocity=np.var(diff_history[converged_steps:,:,:,2:])
+    return converged_steps,min_dist, max_u, diff_var_position, diff_var_velocity
 
 # if main is called, run the test
 if __name__ == '__main__':
