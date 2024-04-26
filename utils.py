@@ -1,6 +1,8 @@
 import numpy as np
 import copy
 import matplotlib.pyplot as plt
+import lhsmdu
+import time
 
 def init(n_agents,nx_system, type='random'):
     # initial condition with all zeros
@@ -124,6 +126,125 @@ def calc_SRQs(x_history,u_history,diff_history):
     diff_var_position=np.var(np.var(diff_history[converged_steps:,:,:,:2],axis=(0)))
     diff_var_velocity=np.var(diff_history[converged_steps:,:,:,2:])
     return converged_steps,min_dist, max_u, diff_var_position, diff_var_velocity
+
+
+def one_simulation_hw5(noise=0, fix_seed=True, save_fig=False, simulation_sec=15, simulation_noise=None, x_init=None):
+    ## make hw 5 easier
+    # return the 2 SRQs
+    if fix_seed:
+        np.random.seed(0)
+    n_agents=4
+    nx_system=4
+    dt=0.04
+    initial_sep=3.1
+    random_init_position_range=30
+
+    # define destination
+    Destination=(15,15,0,0)
+    u_gamma_position=1.
+    u_gamma_velocity=1.0
+    r_scale=4.0
+    base=1.0
+    u_scale=10.0
+
+
+    if x_init is None:
+        print('initialize x_init')
+        valid_init=False
+        while not valid_init:
+            x_init=init(n_agents,nx_system, type='random')
+            x_init[:,:2]=x_init[:,:2]*random_init_position_range
+            # check if the initial condition is valid
+            valid_init=True
+            for i in range(n_agents):
+                for j in range(i+1,n_agents):
+                    # for each pair of agents, check if the initial separation is valid
+                    if np.linalg.norm(x_init[i,:2]-x_init[j,:2])<initial_sep:
+                        valid_init=False
+                        break
+    
+    # start the simulation
+    iterations=int(simulation_sec/dt)
+    x=copy.deepcopy(x_init)
+    diff_history=[]
+    u_history=[]
+    state_history=[]
+    min_distance_hisotry_SRQ=[]
+
+    for i in range(iterations):
+        # calculate the input for control
+        state_history.append(x)
+        diff = x.reshape((n_agents, 1, nx_system)) - x.reshape((1, n_agents, nx_system))
+        # add noise on the observation
+        obs_diff=diff[: ]+noise
+        if simulation_noise is not None:
+            obs_diff+=simulation_noise
+        diff_history.append(diff)
+        r2 = np.multiply(obs_diff[:, :, 0], obs_diff[:, :, 0]) + np.multiply(obs_diff[:, :, 1],obs_diff[:, :, 1])
+        u=controller_centralized(obs_diff, r2/r_scale**2)
+        u_gamma=controller_gamma(x,Destination,u_gamma_position,u_gamma_velocity,r_scale, base)
+        u=(u+u_gamma)*u_scale
+        
+        u_history.append(u)
+        np.fill_diagonal(r2,np.Inf)
+        diff_min=np.sqrt(np.min(r2))
+        min_distance_hisotry_SRQ.append(diff_min)
+
+        # upate the state
+        x=numerical_solution_state1(x, u, dt)
+        
+
+    diff_history=np.array(diff_history) # 2500, N, N, 4
+    u_history=np.array(u_history)
+    state_history=np.array(state_history)
+    min_distance_hisotry_SRQ=np.array(min_distance_hisotry_SRQ)
+    velocity_diff_norm=np.linalg.norm(diff_history[:,:,:,2:],axis=3)
+    velocity_diff_max_SRQ = np.max(velocity_diff_norm,axis=(1,2))
+    # save SRQs
+    # min_distance_hisotry_SRQ=np.array(min_distance_hisotry_SRQ)
+    # velocity_diff_max_SRQ=np.array(velocity_diff_max_SRQ)
+    if save_fig:
+        plt.clf()
+        fig,axs = plt.subplots(2,1,figsize=(10,8))
+        axs = np.ravel(axs)
+        # # visualize the trajectory convergence
+        # first plot is the min distance between the swam
+        axs[0].plot(min_distance_hisotry_SRQ,label=f'min distance {noise}')
+        axs[0].set_title('SRQs')
+        axs[0].set_ylabel('min distance')   
+        axs[0].grid()
+
+        # 2nd plot is the velocity diff norm
+        
+        axs[1].plot(velocity_diff_max_SRQ,label=f'velocity diff norm max {noise}')
+        axs[1].set_ylabel('velocity diff norm max')
+        axs[1].grid()
+        axs[0].legend()
+        axs[1].legend()
+    
+    return min_distance_hisotry_SRQ[-1], velocity_diff_max_SRQ[-1]
+    
+# calculate the area between two CDFs
+def calc_AVM(SRQ1, SRQ2, ds=0.01):
+    # calculate the area between two CDFs
+    # SRQ1, SRQ2: two CDFs
+    # ds: step size
+    # return: area between two CDFs
+    # sort SRQ1 and SRQ2
+    SRQ1.sort()
+    SRQ2.sort()
+    # each CDF needs to have the same length
+    assert len(SRQ1)==len(SRQ2)
+
+    AVM=0
+    for i in range(len(SRQ1)-1):
+        AVM+=np.abs(SRQ1[i]-SRQ2[i])*ds
+    return AVM
+
+
+
+
+
 
 # if main is called, run the test
 if __name__ == '__main__':

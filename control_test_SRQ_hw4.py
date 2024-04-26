@@ -105,7 +105,7 @@ plt.xlabel('iterations')
 axs[0].set_ylabel('velocity norm')
 axs[0].grid()
 
-# plt.savefig('./plots/trajectory_convergence_node0.png',dpi=300, bbox_inches='tight')
+plt.savefig('./plots/trajectory_convergence_node0.png',dpi=300, bbox_inches='tight')
 plt.clf()
 
 # plot the error terms

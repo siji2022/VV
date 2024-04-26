@@ -10,11 +10,11 @@ from time import time
 # initialize
 start_time = time()
 np.random.seed(0)
-n_agents=10
+n_agents=4
 nx_system=4
-dt=0.02
+dt=0.04
 initial_sep=3.1
-random_init_position_range=20
+random_init_position_range=30
 
 # define destination
 Destination=(15,15,0,0)
@@ -101,32 +101,35 @@ plt.clf()
 # # visualize the trajectory convergence
 
 
-# fig,axs = plt.subplots(3,1,figsize=(10,12))
-# axs = np.ravel(axs)
-# for node_i in range(n_agents):
-#     for node_j in range(n_agents):
-#         if node_i!=node_j and node_i<node_j:
-#             axs[0].plot(np.linalg.norm(diff_history[:,node_i,node_j,:2],axis=1),label=f'position diff {node_i}_{node_j}')
-#             axs[1].plot(np.linalg.norm(diff_history[:,node_i,node_j,2:],axis=1),'.', label=f'velocity diff {node_i}_{node_j}')
-#     axs[1].plot(np.linalg.norm(state_history[:,node_i,2:],axis=1),label=f'velocity norm {node_i}')
-#     axs[2].plot(u_history[:,node_i,0],'.',label=f'u_x {node_i}')
-#     axs[2].plot(u_history[:,node_i,1],'.',label=f'u_y {node_i}')
-#     axs[2].plot(np.linalg.norm(u_history[:,node_i,:],axis=1),label=f'u_norm {node_i}')
+fig,axs = plt.subplots(3,1,figsize=(10,12))
+axs = np.ravel(axs)
+for node_i in range(n_agents):
+    for node_j in range(n_agents):
+        if node_i!=node_j and node_i<node_j:
+            axs[0].plot(np.linalg.norm(diff_history[:,node_i,node_j,:2],axis=1),label=f'position diff {node_i}_{node_j}')
+            axs[1].plot(np.linalg.norm(diff_history[:,node_i,node_j,2:],axis=1),'.', label=f'velocity diff {node_i}_{node_j}')
+    axs[1].plot(np.linalg.norm(state_history[:,node_i,2:],axis=1),label=f'velocity norm {node_i}')
+    axs[2].plot(u_history[:,node_i,0],'.',label=f'u_x {node_i}')
+    axs[2].plot(u_history[:,node_i,1],'.',label=f'u_y {node_i}')
+    axs[2].plot(np.linalg.norm(u_history[:,node_i,:],axis=1),label=f'u_norm {node_i}')
 
-# axs[0].legend()
-# axs[1].legend()
-# axs[2].legend()
-# axs[0].set_title('position diff')
-# axs[1].set_title('velocity diff')
-# axs[2].set_title('control input')
+axs[0].legend()
+axs[1].legend()
+axs[2].legend()
+axs[0].set_title('position diff')
+axs[1].set_title('velocity diff')
+axs[2].set_title('control input')
 
-# plt.xlabel('iterations')
-# axs[0].set_ylabel('diff norm')
-# axs[1].set_ylabel('diff norm')
-# axs[0].grid()
-# axs[1].grid()
-# axs[2].grid()
-# plt.savefig('./plots/trajectory_convergence.png',dpi=300, bbox_inches='tight')
+plt.xlabel('iterations')
+axs[0].set_ylabel('diff norm')
+axs[1].set_ylabel('diff norm')
+axs[0].grid()
+axs[1].grid()
+axs[2].grid()
+plt.savefig('./plots/trajectory_convergence.png',dpi=300, bbox_inches='tight')
 
-# print(calc_SRQs(state_history,u_history,diff_history))
-
+print(calc_SRQs(state_history,u_history,diff_history))
+# save the histories
+np.save(f'./data/state_history_{n_agents}.npy',state_history)
+np.save(f'./data/u_history_{n_agents}.npy',u_history)
+np.save(f'./data/diff_history_{n_agents}.npy',diff_history)
