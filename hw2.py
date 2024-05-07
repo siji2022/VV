@@ -5,7 +5,8 @@ import time
 import copy
 from utils import *
 
-
+# create a 10*3 array with space 0.1
+ll=np.random.rand(1)
 def compare_solutions(x, u, title=''):
     trajectory_exact=np.array([x])
     trajectory_numerical=np.array([x])

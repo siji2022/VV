@@ -51,21 +51,32 @@ x=copy.deepcopy(x_init)
 diff_history=[]
 u_history=[]
 state_history=[]
+noise=0
+u_noise=1
+dt_noise=0.004
 for i in range(iterations):
     # calculate the input for control
     state_history.append(x)
     diff = x.reshape((n_agents, 1, nx_system)) - x.reshape(
                 (1, n_agents, nx_system))
+    diff=diff[: ]+np.random.normal(0,noise,(n_agents,1))
     diff_history.append(diff)
+    
     r2 = np.multiply(diff[:, :, 0], diff[:, :, 0]) + np.multiply(diff[:, :, 1],diff[:, :, 1])
 
     u=controller_centralized(diff, r2/r_scale**2)
     u_gamma=controller_gamma(x,Destination,u_gamma_position,u_gamma_velocity,r_scale, base)
     u=(u+u_gamma)*u_scale
     u_history.append(u)
-    
+    if u_noise!=0:
+            u+=np.random.normal(0,u_noise,(n_agents,2))
     # upate the state
-    x=numerical_solution_state1(x, u, dt)
+    if dt_noise!=0:
+        wn=np.random.normal(0,dt_noise,(n_agents,1))
+    else:
+        wn=0
+    # upate the state
+    x=numerical_solution_state1(x, u, dt+wn)
     # if (i+1)%200==0:
     #     # visualize the end station
     #     plt.plot(x[:,0],x[:,1],'o',label=f'at iteration {i}')
@@ -95,13 +106,13 @@ plt.grid()
 plt.xlabel('x')
 plt.ylabel('y')
 plt.title(f'Flocking for N={n_agents}')
-plt.savefig('./plots/flocking.png',bbox_inches='tight',dpi=300)
+plt.savefig(f'./plots/flocking_{n_agents}.png',bbox_inches='tight',dpi=300)
 plt.clf()
 
 # # visualize the trajectory convergence
 
 
-fig,axs = plt.subplots(3,1,figsize=(10,12))
+fig,axs = plt.subplots(3,1,figsize=(14,8))
 axs = np.ravel(axs)
 for node_i in range(n_agents):
     for node_j in range(n_agents):
@@ -113,9 +124,9 @@ for node_i in range(n_agents):
     axs[2].plot(u_history[:,node_i,1],'.',label=f'u_y {node_i}')
     axs[2].plot(np.linalg.norm(u_history[:,node_i,:],axis=1),label=f'u_norm {node_i}')
 
-axs[0].legend()
-axs[1].legend()
-axs[2].legend()
+axs[0].legend(ncol=2)
+axs[1].legend(ncol=2)
+axs[2].legend(ncol=2)
 axs[0].set_title('position diff')
 axs[1].set_title('velocity diff')
 axs[2].set_title('control input')
@@ -126,10 +137,11 @@ axs[1].set_ylabel('diff norm')
 axs[0].grid()
 axs[1].grid()
 axs[2].grid()
-plt.savefig('./plots/trajectory_convergence.png',dpi=300, bbox_inches='tight')
+
+plt.savefig(f'./plots/trajectory_convergence_{n_agents}.png',dpi=300, bbox_inches='tight')
 
 print(calc_SRQs(state_history,u_history,diff_history))
 # save the histories
-np.save(f'./data/state_history_{n_agents}.npy',state_history)
-np.save(f'./data/u_history_{n_agents}.npy',u_history)
-np.save(f'./data/diff_history_{n_agents}.npy',diff_history)
+# np.save(f'./data/state_history_{n_agents}.npy',state_history)
+# np.save(f'./data/u_history_{n_agents}.npy',u_history)
+# np.save(f'./data/diff_history_{n_agents}.npy',diff_history)

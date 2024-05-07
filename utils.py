@@ -128,12 +128,12 @@ def calc_SRQs(x_history,u_history,diff_history):
     return converged_steps,min_dist, max_u, diff_var_position, diff_var_velocity
 
 
-def one_simulation_hw5(noise=0, fix_seed=True, save_fig=False, simulation_sec=15, simulation_noise=None, x_init=None):
+def one_simulation_hw5(noise=0, fix_seed=True, save_fig=False, simulation_sec=13.6, x_init=None, u_noise=0, dt_noise=0,n_agents=4):
     ## make hw 5 easier
     # return the 2 SRQs
     if fix_seed:
         np.random.seed(0)
-    n_agents=4
+
     nx_system=4
     dt=0.04
     initial_sep=3.1
@@ -149,7 +149,7 @@ def one_simulation_hw5(noise=0, fix_seed=True, save_fig=False, simulation_sec=15
 
 
     if x_init is None:
-        print('initialize x_init')
+        # print('initialize x_init')
         valid_init=False
         while not valid_init:
             x_init=init(n_agents,nx_system, type='random')
@@ -162,6 +162,7 @@ def one_simulation_hw5(noise=0, fix_seed=True, save_fig=False, simulation_sec=15
                     if np.linalg.norm(x_init[i,:2]-x_init[j,:2])<initial_sep:
                         valid_init=False
                         break
+    
     
     # start the simulation
     iterations=int(simulation_sec/dt)
@@ -177,13 +178,13 @@ def one_simulation_hw5(noise=0, fix_seed=True, save_fig=False, simulation_sec=15
         diff = x.reshape((n_agents, 1, nx_system)) - x.reshape((1, n_agents, nx_system))
         # add noise on the observation
         obs_diff=diff[: ]+noise
-        if simulation_noise is not None:
-            obs_diff+=simulation_noise
         diff_history.append(diff)
         r2 = np.multiply(obs_diff[:, :, 0], obs_diff[:, :, 0]) + np.multiply(obs_diff[:, :, 1],obs_diff[:, :, 1])
         u=controller_centralized(obs_diff, r2/r_scale**2)
         u_gamma=controller_gamma(x,Destination,u_gamma_position,u_gamma_velocity,r_scale, base)
         u=(u+u_gamma)*u_scale
+        if u_noise!=0:
+            u+=np.random.normal(0,u_noise,(n_agents,2))
         
         u_history.append(u)
         np.fill_diagonal(r2,np.Inf)
@@ -191,7 +192,11 @@ def one_simulation_hw5(noise=0, fix_seed=True, save_fig=False, simulation_sec=15
         min_distance_hisotry_SRQ.append(diff_min)
 
         # upate the state
-        x=numerical_solution_state1(x, u, dt)
+        if dt_noise!=0:
+            wn=np.random.normal(0,dt_noise,(n_agents,1))
+        else:
+            wn=0
+        x=numerical_solution_state1(x, u, dt+wn)
         
 
     diff_history=np.array(diff_history) # 2500, N, N, 4
@@ -205,7 +210,7 @@ def one_simulation_hw5(noise=0, fix_seed=True, save_fig=False, simulation_sec=15
     # velocity_diff_max_SRQ=np.array(velocity_diff_max_SRQ)
     if save_fig:
         plt.clf()
-        fig,axs = plt.subplots(2,1,figsize=(10,8))
+        fig,axs = plt.subplots(3,1,figsize=(10,8))
         axs = np.ravel(axs)
         # # visualize the trajectory convergence
         # first plot is the min distance between the swam
@@ -215,12 +220,20 @@ def one_simulation_hw5(noise=0, fix_seed=True, save_fig=False, simulation_sec=15
         axs[0].grid()
 
         # 2nd plot is the velocity diff norm
-        
         axs[1].plot(velocity_diff_max_SRQ,label=f'velocity diff norm max {noise}')
         axs[1].set_ylabel('velocity diff norm max')
         axs[1].grid()
         axs[0].legend()
         axs[1].legend()
+        plt.savefig(f'./plots/SRQs_{noise}.png')
+
+        for node_i in range(n_agents):
+            axs[2].plot(np.linalg.norm(u_history[:,node_i,:],axis=1),label=f'u {node_i}')
+        axs[2].set_ylabel('u')
+        axs[2].grid()
+        axs[2].legend()
+        axs[2].legend()
+        plt.savefig(f'./plots/SRQs_{noise}.png')
     
     return min_distance_hisotry_SRQ[-1], velocity_diff_max_SRQ[-1]
     

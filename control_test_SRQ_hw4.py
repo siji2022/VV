@@ -24,19 +24,19 @@ r_scale=4.0
 base=1.0
 u_scale=10.0
 
-
-valid_init=False
-while not valid_init:
-    x_init=init(n_agents,nx_system, type='random')
-    x_init[:,:2]=x_init[:,:2]*random_init_position_range
-    # check if the initial condition is valid
-    valid_init=True
-    for i in range(n_agents):
-        for j in range(i+1,n_agents):
-            # for each pair of agents, check if the initial separation is valid
-            if np.linalg.norm(x_init[i,:2]-x_init[j,:2])<initial_sep:
-                valid_init=False
-                break
+x_init=np.load('./data/x_init.npy')
+# valid_init=False
+# while not valid_init:
+#     x_init=init(n_agents,nx_system, type='random')
+#     x_init[:,:2]=x_init[:,:2]*random_init_position_range
+#     # check if the initial condition is valid
+#     valid_init=True
+#     for i in range(n_agents):
+#         for j in range(i+1,n_agents):
+#             # for each pair of agents, check if the initial separation is valid
+#             if np.linalg.norm(x_init[i,:2]-x_init[j,:2])<initial_sep:
+#                 valid_init=False
+#                 break
 
 # start the simulation
 

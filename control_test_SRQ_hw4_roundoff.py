@@ -87,7 +87,7 @@ for dt in dts:
         u_history.append(u)
         x=numerical_solution_state1(x, u, dt)
         # round off the state
-        x=np.round(x,4)
+        x=np.round(x,2)
 
     diff_history=np.array(diff_history)
     u_history=np.array(u_history)
@@ -116,12 +116,12 @@ u2=results[dts[1]][2]
 # axs[0].plot(x_axis_u2,np.linalg.norm(u_bar[:,node_i,2:],axis=1),label=f'velocity norm {node_i} at standard extrapolation', alpha=1, linestyle='dotted',linewidth=4.0)
 
 axs[0].legend()
-axs[0].set_title('velocity norm Round off r=4')
+axs[0].set_title('velocity norm Round off r=2')
 plt.xlabel('iterations')
 axs[0].set_ylabel('velocity norm')
 axs[0].grid()
 
-plt.savefig('./plots/round_off_node0.png',dpi=300, bbox_inches='tight')
+plt.savefig('./plots/round_off_node0_r2.png',dpi=300, bbox_inches='tight')
 plt.clf()
 
 # plot the error terms
